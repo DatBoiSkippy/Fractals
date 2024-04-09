@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Demo Application</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #render {
+            width: 90vmin;
+            height: 90vmin;
+            margin: auto;
+            outline: 1px solid black;
+
+        }
+
+        div:has(#render) {
+            width: 100%;
+            height: 100vh;
+            min-height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        button {
+            font-size: 1.25em;
+            width: fit-content;
+            height: fit-content;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+    </style>
+    </code_to_rewrite>
+</head>
+
+<body>
+    <script src="https://unpkg.com/@jscad/modeling" id="MODELING"></script>
+    <script src="https://unpkg.com/@jscad/regl-renderer"></script>
+    <!-- Borrowed from https://github.com/microsoft/maker.js/blob/ec18acb959fa1b5f3fb0c790f45ffe2f9092c1b0/docs/external/jscad/stl-serializer.js -->
+    <!-- <script src="stl-serializer.js"></script> -->
+
+    <div>
+        <div id="render"></div>
+    </div>
+
+    <script type="module" language="javascript">
+        import { render } from './render.js';
+
+        const { booleans, colors, primitives, transforms } = jscadModeling // modeling comes from the included MODELING library
+        const { translate, rotate, align } = transforms;
+
+        const { intersect, subtract, union } = booleans
+        const { colorize, colorNameToRgb } = colors
+        const { cube, cuboid, sphere } = primitives
+
+        const shrinkVal = 0.8;
+        const growVal = 1.1;
+
+        function findOppositeSideLength(angleRadians, adjacentSideLength) {
+            return Math.tan(angleRadians) * adjacentSideLength;
+        }
+        const fractalTree = (p, iterations) => {
+
+            // if (iterations == 0) {
+            //     if (p.angle) {
+            //         var template = cuboid({ size: [p.width, p.length, p.height] });
+            //         var currentSegment = rotate([0, 0, 0], template);
+            //         return currentSegment;
+            //     }
+            //     return cuboid({ size: [p.width, p.length, p.height] });
+            // }
+
+            //let opposite = findOppositeSideLength(p.angle, p.height);
+
+            let template = cuboid({ size: [p.width, p.length, p.height] });
+            let currentSegment = align({ modes: ['none', 'none', 'max'] }, template);
+            let rotX = (p.angle + 0.5) * 1;
+            let rotY = (p.angle + 0.2) * 1;
+            let rotZ = (p.angle + 0.2) * 1;
+
+            if (iterations == 0) {
+                return currentSegment;
+            }
+            if (iterations >= 3) {
+                return [
+                    currentSegment,
+                    rotate([rotX, rotY, 0], translate([0, 0, p.height * shrinkVal], fractalTree({ width: p.width * shrinkVal, length: p.length * shrinkVal, height: p.height * shrinkVal, angle: p.angle * 1.2 }, iterations - 1))),
+                    rotate([rotX, rotY, 2], translate([0, 0, p.height * shrinkVal], fractalTree({ width: p.width * shrinkVal, length: p.length * shrinkVal, height: p.height * shrinkVal, angle: p.angle * 1.2 }, iterations - 1))),
+                    rotate([rotX, rotY, 4], translate([0, 0, p.height * shrinkVal], fractalTree({ width: p.width * shrinkVal, length: p.length * shrinkVal, height: p.height * shrinkVal, angle: p.angle * 1.2 }, iterations - 1))),
+                ]
+            }
+            else if (iterations < 3) {
+                return [
+                    currentSegment,
+                    rotate([rotX, 0, 0], translate([0, 0, p.height / 2], fractalTree({ width: p.width * shrinkVal, length: p.length * shrinkVal, height: p.height / 2, angle: p.angle }, iterations - 1))),
+                    rotate([rotX * 1.6, 0, 2], translate([0, 0, p.height * shrinkVal], fractalTree({ width: p.width * shrinkVal, length: p.length * shrinkVal, height: p.height * shrinkVal, angle: p.angle }, iterations - 1))),
+                ]
+            }
+        }
+
+        render(document.getElementById("render"),
+            fractalTree({ length: 2, width: 2, height: 30, angle: 0.2 }, 6));
+
+    </script>
+</body>
+
+</html>
